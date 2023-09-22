@@ -1,6 +1,11 @@
 package campain
 
-import "time"
+import (
+	"errors"
+	"time"
+
+	"github.com/rs/xid"
+)
 
 type Contact struct {
 	Email string
@@ -14,7 +19,19 @@ type Campain struct {
 	Contacts  []Contact
 }
 
-func NewCampain(name string, content string, emails []string) *Campain {
+func NewCampain(name string, content string, emails []string) (*Campain, error) {
+
+	if name == "" {
+		return nil, errors.New("name is required")
+	}
+
+	if content == "" {
+		return nil, errors.New("content is required")
+	}
+
+	if len(emails) == 0 {
+		return nil, errors.New("contacts is required")
+	}
 
 	contacts := make([]Contact, len(emails))
 
@@ -23,10 +40,10 @@ func NewCampain(name string, content string, emails []string) *Campain {
 	}
 
 	return &Campain{
-		ID:        "1",
+		ID:        xid.New().String(),
 		Name:      name,
 		CreatedOn: time.Now(),
 		Content:   content,
 		Contacts:  contacts,
-	}
+	}, nil
 }
