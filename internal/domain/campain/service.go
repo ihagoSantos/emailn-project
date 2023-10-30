@@ -9,6 +9,15 @@ type Service struct {
 }
 
 func (s *Service) Create(newCampain contract.NewCampain) (string, error) {
-	campain, _ := NewCampain(newCampain.Name, newCampain.Content, newCampain.Emails)
+	campain, err := NewCampain(newCampain.Name, newCampain.Content, newCampain.Emails)
+	if err != nil {
+		return "", err
+	}
+	err = s.Repository.Save(campain)
+
+	if err != nil {
+		return "", err
+	}
+
 	return campain.ID, nil
 }
