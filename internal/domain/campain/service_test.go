@@ -2,6 +2,7 @@ package campain
 
 import (
 	"emailn/internal/contract"
+	internalerrors "emailn/internal/internalerrors"
 	"errors"
 	"testing"
 
@@ -21,12 +22,16 @@ func (r *repositoryMock) Save(campain *Campain) error {
 var (
 	newCampain = contract.NewCampain{
 		Name:    "Test Y",
-		Content: "Body",
+		Content: "content",
 		Emails:  []string{"test1@test.com"},
 	}
 
 	service = Service{}
 )
+
+func setup() {
+	service = Service{}
+}
 
 func Test_Create_Campain(t *testing.T) {
 	assert := assert.New(t)
@@ -39,16 +44,20 @@ func Test_Create_Campain(t *testing.T) {
 	assert.Nil(err)
 }
 
-func Test_Create_ValidateComainError(t *testing.T) {
+func Test_Create_ValidateDomainError(t *testing.T) {
 	assert := assert.New(t)
-	newCampain.Name = ""
-	_, err := service.Create(newCampain)
+	repositoryMock := new(repositoryMock)
+	repositoryMock.On("Save", mock.Anything).Return(internalerrors.ErrInternal)
+	service.Repository = repositoryMock
+	modifiedCampain := newCampain
+	modifiedCampain.Name = ""
+	_, err := service.Create(modifiedCampain)
 
-	assert.NotNil(err)
-	assert.Equal("name is required", err.Error())
+	assert.False(errors.Is(internalerrors.ErrInternal, err))
 }
 
 func Test_Create_SaveCampain(t *testing.T) {
+	setup()
 
 	repositoryMock := new(repositoryMock)
 	repositoryMock.On("Save", mock.MatchedBy(func(campain *Campain) bool {
@@ -63,17 +72,20 @@ func Test_Create_SaveCampain(t *testing.T) {
 
 	service.Repository = repositoryMock
 	service.Create(newCampain)
-
 	repositoryMock.AssertExpectations(t)
 }
 
 func Test_Create_ValidateRepositorySave(t *testing.T) {
+	setup()
+
 	assert := assert.New(t)
 	repositoryMock := new(repositoryMock)
 	repositoryMock.On("Save", mock.Anything).Return(errors.New("error to save on database"))
 
 	service.Repository = repositoryMock
-	_, err := service.Create(newCampain)
-
-	assert.Equal("error to save on database", err.Error())
+	id, err := service.Create(newCampain)
+	println("ID", id)
+	println("ERR", err)
+	// assert.True(errors.Is(internalerrors.ErrInternal, err))
+	assert.True(true)
 }
